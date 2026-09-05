@@ -1,0 +1,38 @@
+# Offline RAG, Local LLM & Voice Engine — Python dependencies
+
+pytest>=7.4.0
+
+# Document ingestion for the RAG knowledge store — OPTIONAL.
+# LocalKnowledgeStore always prefers a plain-text/.md counterpart and needs none of
+# these to load one. They are only exercised as a fallback when a source document is
+# added as .pdf/.docx/.pptx with no .md/.txt version — without them the loaders
+# silently return zero chunks for that file (caught ImportError) rather than failing.
+pypdf>=4.0.0            # backend/knowledge/loaders/pdf_loader.py primary PDF extractor
+pdfplumber>=0.11.0      # pdf_loader.py fallback if pypdf yields no extractable text
+python-docx>=1.1.0      # backend/knowledge/loaders/office_loader.py — .docx
+python-pptx>=0.6.23     # office_loader.py — .pptx
+flashrank>=0.2.5        # backend/knowledge/retrieval/reranker.py — secondary reranker tier
+                        # (primary is sentence-transformers semantic embedding; falls back
+                        # further to keyword overlap if neither is installed)
+
+# Local AI reasoning layer (Qwen3-4B) — OPTIONAL.
+# The LLM itself is served by Ollama (https://ollama.com), NOT a pip package — install it
+# separately and pull the model once:
+#   ollama pull qwen3:4b-instruct-2507-q4_K_M
+# Ollama wraps llama.cpp's quantized GPU kernels, which are dramatically faster here than
+# an in-process transformers/BitsAndBytes path (~8-10 tok/s -> ~64 tok/s on the same 6GB
+# laptop GPU in this repo's own testing). torch/transformers/sentence-transformers below
+# are for the RAG embedding + Kokoro TTS models, not the LLM.
+torch>=2.5.0
+transformers>=4.57.0
+sentence-transformers>=5.2.0
+# Fixes HuggingFace Hub downloads on Windows machines running TLS-inspecting endpoint-security
+# software (verifies against the OS trust store instead of certifi's bundle). Harmless elsewhere.
+truststore>=0.9.0
+
+# Voice interface (STT/TTS) — OPTIONAL, offline.
+# Uses the models vendored in Voice/ (ggml-tiny.en.bin, Kokoro-82M).
+pywhispercpp>=1.3.0     # whisper.cpp Python bindings — loads Voice/ggml-tiny.en.bin directly, CPU-only
+kokoro>=0.9.2           # Kokoro-82M StyleTTS2 inference package, loads Voice/Kokoro-82M/ locally
+soundfile>=0.12.1       # WAV encoding for synthesized speech
+imageio-ffmpeg>=0.5.1   # bundles a static ffmpeg binary to decode/resample audio uploads
